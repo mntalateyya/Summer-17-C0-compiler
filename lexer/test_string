@@ -1,0 +1,7 @@
+(   int @"INT"|
+    string @"STR"
+)  @"TYPE" |
+[A-Za-z_][A-Za-z0-9_]* @"ID" |
+(   ( 0 | [1-9][0-9]* )@"DEC" |
+    0[xX][0-9a-fA-F]+@"HEX"
+) @"NUM"

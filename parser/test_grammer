@@ -1,0 +1,7 @@
+3
+T' T R
+T' -> T $ ;
+T -> R ;
+T -> %a T %c ;
+R -> nil ;
+R -> R %b R ;

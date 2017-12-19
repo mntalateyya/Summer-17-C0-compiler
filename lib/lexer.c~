@@ -1,0 +1,85 @@
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
+#include <inttypes.h>
+#include "lexer.h"
+#include "cstack.h"
+#include "xalloc.h"
+
+//create an empty state of an NFA
+nfa_st create_state () {
+    struct state *S = xmalloc(sizeof(struct state));
+    S->letters = xcalloc(128,sizeof(void*));
+    return S;
+}
+
+//create an NFA with n empty states
+NFA_p create_nfa (size_t n) {
+    NFA_p N = malloc(sizeof(struct NFA));
+    N->states = malloc(n*sizeof(void*));
+    for (size_t i=0; i<n; ++i) {
+	N->states[i] = create_state();
+    }
+    return N;
+}
+
+//create an NFA accepting single letter
+NFA_p letter2nfa (uint8_t c) {
+    //allocate memory
+    NFA_p N = create_nfa(1);
+    N->start = malloc(sizeof(struct state_list));
+    N->end =  malloc(sizeof(void*)); //one end arrow
+    N->start->state = N->states[0]; //start = only state
+    N->end[0] = &N->states[0]->letters[c]; //end arrow
+    N->end_c = 1;
+    N->states_c = 1;
+    return N;
+}
+
+NFA_p concat (NFA_p N1, NFA_p N2) {
+    N1->states = realloc(N1, N1->states_c+N2->states_c);
+    memcpy(N1->states+N1->states_c, N2->states, sizeof(void*)*N2->states_c);
+    
+}
+
+char *read_regex (FILE *f) {
+    char *res = calloc(1,sizeof(char));
+    size_t size = 1;
+    size_t index = 0;
+    size_t n = 80;
+    char *line = malloc(sizeof(char)*n);
+    ssize_t len = getline(&line, &n, f);
+    while (len!=-1) {
+        size_t i=0;
+        while(line[i]!='\n') {
+            if(index>=size-1) {
+                res = realloc(res, sizeof(char)*size*2);
+                size *= 2;
+            }
+            if (!isspace(line[i]))
+                res[index++] = line[i];
+            ++i;
+        }
+        len = getline(&line, &n, f);
+    }
+    res[index] = '\0';
+    res = realloc(res, sizeof(char)*(index+1));
+    free(line);
+    return res;
+}
+
+char *post_tokenize (char *str) {
+    size_t len = strlen(str);
+    cstack S = cstack_new();
+    for (size_t index = 0; index<len; ++index) {
+        if (str[index]=='\\') {
+            cstack_push(S,str[++index]);
+        } else {
+            cstack_push(S, str[index]);
+        }
+    }
+    return NULL;
+}
